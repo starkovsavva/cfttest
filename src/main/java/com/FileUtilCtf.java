@@ -8,9 +8,14 @@ import com.util.fileprocessing.DataProcessor;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 public class FileUtilCtf  {
@@ -35,7 +40,7 @@ public class FileUtilCtf  {
     public void processStart(String[] args) {
         processArgs(args);
         processFiles();
-        processStatistic();
+        printStatistics();
     }
 
     private void processArgs(String[] args) {
@@ -92,10 +97,11 @@ public class FileUtilCtf  {
                 System.out.println("\nFloats:");
                 System.out.println("  Count: " + floatStats.count);
                 if (fullStats) {
-                    System.out.println("  Min: " + floatStats.min);
-                    System.out.println("  Max: " + floatStats.max);
-                    System.out.println("  Sum: " + floatStats.sum);
-                    System.out.println("  Average: " + (floatStats.sum / floatStats.count));
+                    System.out.println("  Min: " + floatStats.minDouble);
+                    System.out.println("  Max: " + floatStats.maxDouble);
+                    System.out.println("  Sum: " + floatStats.sumDouble);
+                    System.out.println("  Average: " + floatStats.sumDouble.divide(BigDecimal.valueOf(floatStats.count)));
+
                 }
             }
 
@@ -119,7 +125,7 @@ public class FileUtilCtf  {
              var stringWriter = createWriter(DEFAULT_STRINGS)) {
 
             for (String inputFile : inputFiles) {
-                processSingleFile(inputFile, processor, intWriter, floatWriter, stringWriter, integerStats,floatStats,stringStats);
+                processSingleFile(inputFile, processor, intWriter, floatWriter, stringWriter);
             }
         } catch (IOException e) {
             throw new RuntimeException("Error creating output files: " + e.getMessage(), e);
@@ -129,14 +135,13 @@ public class FileUtilCtf  {
 
     private static BufferedWriter createWriter(String defaultFileName) throws IOException {
         String fileName = filePrefix + defaultFileName;
-        Path filePath = outputPath.isEmpty() ?
-                Paths.get(fileName) :
-                Paths.get(outputPath, fileName);
+        Path outfilePath = outputPath.isEmpty() ?
+                Paths.get(DEFAULT_DIR) :
+                Paths.get(outputPath);
 
-        Files.createDirectories(filePath.getParent());
+        Files.createDirectories(outfilePath.getParent());
 
-        return Files.newBufferedWriter(filePath,
-                StandardOpenOption.CREATE,
+        return Files.newBufferedWriter(outfilePath.resolve(fileName), StandardOpenOption.CREATE,
                 StandardOpenOption.WRITE,
                 appendMode ? StandardOpenOption.APPEND : StandardOpenOption.TRUNCATE_EXISTING);
     }
@@ -144,13 +149,16 @@ public class FileUtilCtf  {
     private static void processSingleFile(String inputFile, DataProcessor processor,
                                           BufferedWriter intWriter,
                                           BufferedWriter floatWriter,
-                                          BufferedWriter stringWriter,
-                                          Stats integerStats,
-                                          Stats floatStats,
-                                          Stats stringStats) {
+                                          BufferedWriter stringWriter) {
         try (Stream<String> lines = Files.lines(Paths.get(inputFile))) {
             lines.filter(line -> !line.isEmpty())
-                    .forEach(line -> processor.processLine(line, intWriter, floatWriter, stringWriter));
+                    .forEach(line -> {
+                        try {
+                            processor.processLine(line, intWriter, floatWriter, stringWriter);
+                        } catch (IOException e) {
+                            System.err.println("Line can`t be processed: " + line + e.getMessage());
+                        }
+                    });
         } catch (NoSuchFileException e) {
             System.err.println("File not found: " + inputFile);
         } catch (IOException e) {

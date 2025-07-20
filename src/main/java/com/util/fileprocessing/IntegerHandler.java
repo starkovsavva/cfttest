@@ -9,7 +9,7 @@ class IntegerHandler implements DataHandler {
     @Override
     public boolean handle(String line, BufferedWriter writer, Stats stats) throws IOException {
         try {
-            int value = Integer.parseInt(line);
+            Long value = Long.parseLong(line);
             writeLine(writer, line);
             stats.update(value);
             return true;

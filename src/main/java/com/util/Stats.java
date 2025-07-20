@@ -1,14 +1,17 @@
 package com.util;
 
+import java.math.BigDecimal;
+import java.util.BitSet;
+
 public class Stats {
     public long count = 0;
     public long min = Long.MAX_VALUE;
     public long max = Long.MIN_VALUE;
     public long sum = 0;
 
-    public double minDouble = Double.MAX_VALUE;
-    public double maxDouble = Double.MIN_VALUE;
-    public double sumDouble = 0.0;
+    public BigDecimal minDouble = BigDecimal.valueOf(Double.MAX_VALUE);
+    public BigDecimal maxDouble = BigDecimal.valueOf(Double.MIN_VALUE);
+    public BigDecimal sumDouble = BigDecimal.ZERO;
 
     public int minLength = Integer.MAX_VALUE;
     public int maxLength = 0;
@@ -22,9 +25,10 @@ public class Stats {
 
     public void update(double value) {
         count++;
-        minDouble = Math.min(minDouble, value);
-        maxDouble = Math.max(maxDouble, value);
-        sumDouble += value;
+        BigDecimal valueb = BigDecimal.valueOf(value);
+        minDouble = minDouble.compareTo(valueb) >= 0 ? valueb : minDouble;
+        maxDouble = maxDouble.compareTo(valueb) <= 0 ? valueb :  maxDouble;
+        sumDouble = sumDouble.add(valueb);
     }
 
     public void update(String value) {
@@ -38,9 +42,9 @@ public class Stats {
     public long getMin() { return min; }
     public long getMax() { return max; }
     public long getSum() { return sum; }
-    public double getMinDouble() { return minDouble; }
-    public double getMaxDouble() { return maxDouble; }
-    public double getSumDouble() { return sumDouble; }
+    public BigDecimal getMinDouble() { return minDouble; }
+    public BigDecimal getMaxDouble() { return maxDouble; }
+    public BigDecimal getSumDouble() { return sumDouble; }
     public int getMinLength() { return minLength; }
     public int getMaxLength() { return maxLength; }
 }
